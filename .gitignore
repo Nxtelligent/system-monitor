@@ -8,6 +8,8 @@ venv/
 *.egg-info/
 dist/
 dist_v2/
+dist_new/
+dist_old/
 build/
 .idea/
 .vscode/

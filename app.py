@@ -1,8 +1,12 @@
-import os
-import sys
+import asyncio
 import json
+import os
 import platform
+import sys
+
 import psutil
+import webview2
+from webview2 import base as wv
 
 from collectors.cpu import get_cpu_metrics
 from collectors.memory import get_memory_metrics
@@ -11,59 +15,64 @@ from collectors.gpu import get_gpu_metrics
 # Resolve asset directory: PyInstaller extracts to _MEIPASS, else use script dir
 BASE_DIR = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
 
+# No-op callback for evaluate (we don't need return values)
+_noop = wv.listener(lambda _: None)
+
+
+def _eval_js(js_code):
+    """Execute JavaScript in the webview."""
+    wv.evaluate(js_code.encode('utf-8'), _noop)
+
+
+class SystemMonitor(webview2.Window):
+    """Main application window with system metrics push."""
+
+    @webview2.webview2_api
+    def page_ready(self):
+        """Called from JS when the page is loaded and ready."""
+        info = json.dumps({
+            'cpu_name': platform.processor() or '',
+            'total_ram': psutil.virtual_memory().total,
+        })
+        _eval_js(f'onSystemInfo({info})')
+
+
+async def _push_loop():
+    """Push metrics to JS every 1 second."""
+    while True:
+        await asyncio.sleep(1.0)
+        try:
+            data = json.dumps({
+                'cpu': get_cpu_metrics(),
+                'memory': get_memory_metrics(),
+                'gpu': get_gpu_metrics(),
+            })
+            _eval_js(f'onMetrics({data})')
+        except Exception:
+            pass  # Window may be closing
+
 
 def main():
-    from PySide6.QtWidgets import QApplication
-    from PySide6.QtWebEngineWidgets import QWebEngineView
-    from PySide6.QtWebChannel import QWebChannel
-    from PySide6.QtCore import QUrl, QObject, Signal, Slot, QTimer
-    from PySide6.QtGui import QColor
+    html_path = os.path.abspath(
+        os.path.join(BASE_DIR, 'templates', 'index.html')
+    ).replace('\\', '/')
+    url = f'file:///{html_path}'
 
-    class Backend(QObject):
-        """Bridge exposed to JS via QWebChannel."""
-        metricsReady = Signal(str)
-        systemInfoReady = Signal(str)
+    app = SystemMonitor(
+        title='System Monitor',
+        url=url,
+        size='960x700',
+    )
 
-        @Slot()
-        def pageReady(self):
-            """Called once by JS when QWebChannel is initialised."""
-            self.systemInfoReady.emit(json.dumps({
-                'cpu_name': platform.processor() or '',
-                'total_ram': psutil.virtual_memory().total,
-            }))
+    async def run():
+        # Start metrics push loop alongside the window event loop
+        push_task = asyncio.create_task(_push_loop())
+        try:
+            await app.run()
+        finally:
+            push_task.cancel()
 
-    app = QApplication(sys.argv)
-    app.setApplicationName('System Monitor')
-
-    backend = Backend()
-
-    channel = QWebChannel()
-    channel.registerObject('backend', backend)
-
-    view = QWebEngineView()
-    view.setWindowTitle('System Monitor')
-    view.resize(960, 700)
-    view.page().setBackgroundColor(QColor('#0d1117'))
-    view.page().setWebChannel(channel)
-
-    # Load the HTML from the templates directory
-    html_path = os.path.join(BASE_DIR, 'templates', 'index.html')
-    view.setUrl(QUrl.fromLocalFile(html_path))
-    view.show()
-
-    # Push metrics every second via Qt signal (no network I/O)
-    def push_metrics():
-        backend.metricsReady.emit(json.dumps({
-            'cpu': get_cpu_metrics(),
-            'memory': get_memory_metrics(),
-            'gpu': get_gpu_metrics(),
-        }))
-
-    timer = QTimer()
-    timer.timeout.connect(push_metrics)
-    timer.start(1000)
-
-    sys.exit(app.exec())
+    asyncio.run(run())
 
 
 if __name__ == '__main__':

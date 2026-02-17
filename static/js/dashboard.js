@@ -153,24 +153,25 @@ function updateMemory(mem) {
     setText(dom.memCached, formatBytes(mem.cached));
 }
 
-// --- QWebChannel: receive metrics directly from Python ---
-new QWebChannel(qt.webChannelTransport, function (channel) {
-    const backend = channel.objects.backend;
+// --- Global functions called by Python via evaluate_js ---
 
-    backend.systemInfoReady.connect(function (jsonStr) {
-        const info = JSON.parse(jsonStr);
-        if (info.cpu_name) setText(dom.cpuName, info.cpu_name);
+function onSystemInfo(info) {
+    if (info.cpu_name) setText(dom.cpuName, info.cpu_name);
+}
+
+function onMetrics(data) {
+    requestAnimationFrame(function () {
+        updateCPU(data.cpu);
+        updateGPU(data.gpu);
+        updateMemory(data.memory);
     });
+}
 
-    backend.metricsReady.connect(function (jsonStr) {
-        const data = JSON.parse(jsonStr);
-        requestAnimationFrame(function () {
-            updateCPU(data.cpu);
-            updateGPU(data.gpu);
-            updateMemory(data.memory);
-        });
-    });
-
-    // Tell Python the page is ready
-    backend.pageReady();
-});
+// Tell Python the page is ready once webview2 API is available
+(function waitForApi() {
+    if (window.webview2 && window.webview2.api && window.webview2.api.page_ready) {
+        window.webview2.api.page_ready();
+    } else {
+        setTimeout(waitForApi, 100);
+    }
+})();

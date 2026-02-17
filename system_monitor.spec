@@ -1,36 +1,39 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 import os
+import site
 
 root = os.path.abspath('.')
+
+# Find the webview2 package directory for its DLLs and JS
+webview2_dir = None
+for sp in site.getsitepackages():
+    candidate = os.path.join(sp, 'webview2')
+    if os.path.isdir(candidate):
+        webview2_dir = candidate
+        break
+if webview2_dir is None:
+    # Fallback for virtualenvs
+    import webview2 as _wv2
+    webview2_dir = os.path.dirname(_wv2.__file__)
 
 a = Analysis(
     ['app.py'],
     pathex=[root],
-    binaries=[],
+    binaries=[
+        (os.path.join(webview2_dir, 'WebView2Loader.dll'), 'webview2'),
+        (os.path.join(webview2_dir, 'Webview2Window.dll'), 'webview2'),
+    ],
     datas=[
         (os.path.join(root, 'templates'), 'templates'),
         (os.path.join(root, 'static'), 'static'),
+        (os.path.join(webview2_dir, 'webview2.js'), 'webview2'),
     ],
-    hiddenimports=[
-        'PySide6.QtWebEngineWidgets',
-        'PySide6.QtWebEngineCore',
-        'PySide6.QtWebChannel',
-    ],
+    hiddenimports=['webview2', 'webview2.base', 'webview2.bridge', 'voxe'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[
-        'PySide6.Qt3DCore', 'PySide6.Qt3DRender', 'PySide6.Qt3DInput',
-        'PySide6.QtBluetooth', 'PySide6.QtMultimedia', 'PySide6.QtMultimediaWidgets',
-        'PySide6.QtNfc', 'PySide6.QtPositioning', 'PySide6.QtSensors',
-        'PySide6.QtSerialPort', 'PySide6.QtTest', 'PySide6.QtSql',
-        'PySide6.QtSvg', 'PySide6.QtSvgWidgets', 'PySide6.QtXml',
-        'PySide6.QtDesigner', 'PySide6.QtHelp', 'PySide6.QtPdf',
-        'PySide6.QtCharts', 'PySide6.QtDataVisualization',
-        'PySide6.QtQuick', 'PySide6.QtQml',
-        'tkinter', 'unittest', 'email', 'xml',
-    ],
+    excludes=['PySide6', 'PyQt5', 'PyQt6', 'tkinter', 'unittest'],
     noarchive=False,
 )
 
