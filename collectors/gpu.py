@@ -1,12 +1,32 @@
 import subprocess
 import shutil
 import sys
+import time
 
 # Hide console window when calling nvidia-smi on Windows
 _CREATE_NO_WINDOW = 0x08000000 if sys.platform == 'win32' else 0
 
 _nvidia_smi_path = None
 _gpu_available = None
+
+# TTL cache to avoid spawning subprocess every second
+_gpu_cache = None
+_gpu_cache_time = 0.0
+_GPU_TTL = 2.0
+
+
+def _safe_int(v):
+    try:
+        return int(v)
+    except (ValueError, TypeError):
+        return 0
+
+
+def _safe_float(v):
+    try:
+        return float(v)
+    except (ValueError, TypeError):
+        return 0.0
 
 
 def _find_nvidia_smi():
@@ -35,13 +55,17 @@ def _get_fallback_metrics():
 
 
 def get_gpu_metrics():
-    global _gpu_available, _nvidia_smi_path
+    global _gpu_available, _nvidia_smi_path, _gpu_cache, _gpu_cache_time
 
     if _gpu_available is None:
         _find_nvidia_smi()
 
     if not _gpu_available:
         return _get_fallback_metrics()
+
+    now = time.monotonic()
+    if _gpu_cache and now - _gpu_cache_time < _GPU_TTL:
+        return _gpu_cache
 
     try:
         result = subprocess.run(
@@ -65,32 +89,22 @@ def get_gpu_metrics():
         if len(values) < 12:
             return _get_fallback_metrics()
 
-        def safe_int(v):
-            try:
-                return int(v)
-            except (ValueError, TypeError):
-                return 0
-
-        def safe_float(v):
-            try:
-                return float(v)
-            except (ValueError, TypeError):
-                return 0.0
-
-        return {
+        _gpu_cache = {
             'available': True,
             'name': values[0],
-            'temperature': safe_int(values[1]),
-            'utilization': safe_int(values[2]),
-            'memory_utilization': safe_int(values[3]),
-            'memory_total': safe_int(values[4]),
-            'memory_used': safe_int(values[5]),
-            'memory_free': safe_int(values[6]),
-            'fan_speed': safe_int(values[7]),
-            'power_draw': safe_float(values[8]),
-            'power_limit': safe_float(values[9]),
-            'clock_current': safe_int(values[10]),
-            'clock_max': safe_int(values[11]),
+            'temperature': _safe_int(values[1]),
+            'utilization': _safe_int(values[2]),
+            'memory_utilization': _safe_int(values[3]),
+            'memory_total': _safe_int(values[4]),
+            'memory_used': _safe_int(values[5]),
+            'memory_free': _safe_int(values[6]),
+            'fan_speed': _safe_int(values[7]),
+            'power_draw': _safe_float(values[8]),
+            'power_limit': _safe_float(values[9]),
+            'clock_current': _safe_int(values[10]),
+            'clock_max': _safe_int(values[11]),
         }
+        _gpu_cache_time = now
+        return _gpu_cache
     except (subprocess.TimeoutExpired, Exception):
-        return _get_fallback_metrics()
+        return _gpu_cache or _get_fallback_metrics()

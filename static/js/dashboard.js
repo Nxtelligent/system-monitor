@@ -26,7 +26,11 @@ const dom = {
     memCached: document.getElementById('memory-cached'),
 };
 
-// --- Formatters ---
+// --- Helpers ---
+function setText(el, value) {
+    if (el.textContent !== value) el.textContent = value;
+}
+
 function formatBytes(bytes) {
     const gb = bytes / 1073741824;
     if (gb >= 1) return gb.toFixed(1) + ' GB';
@@ -77,6 +81,7 @@ function createGaugeChart(canvasId, accentColor) {
 
 function updateGaugeChart(chart, value) {
     const clamped = Math.max(0, Math.min(100, value));
+    if (chart.data.datasets[0].data[0] === clamped) return;
     chart.data.datasets[0].data[0] = clamped;
     chart.data.datasets[0].data[1] = 100 - clamped;
     chart.update('none');
@@ -92,17 +97,18 @@ let gpuInitialized = false;
 function updateCPU(cpu) {
     const util = Math.round(cpu.utilization);
     updateGaugeChart(cpuChart, util);
-    dom.cpuPercent.textContent = util;
+    setText(dom.cpuPercent, String(util));
 
     const speed = cpu.frequency_current;
-    dom.cpuSpeed.textContent = speed >= 1000
+    const speedText = speed >= 1000
         ? (speed / 1000).toFixed(2) + ' GHz'
         : Math.round(speed) + ' MHz';
+    setText(dom.cpuSpeed, speedText);
 
-    dom.cpuCores.textContent = cpu.cores_physical;
-    dom.cpuThreads.textContent = formatNumber(cpu.cores_logical);
-    dom.cpuProcesses.textContent = formatNumber(cpu.processes);
-    dom.cpuUptime.textContent = formatUptime(cpu.uptime_seconds);
+    setText(dom.cpuCores, String(cpu.cores_physical));
+    setText(dom.cpuThreads, formatNumber(cpu.cores_logical));
+    setText(dom.cpuProcesses, formatNumber(cpu.processes));
+    setText(dom.cpuUptime, formatUptime(cpu.uptime_seconds));
 }
 
 function updateGPU(gpu) {
@@ -111,8 +117,8 @@ function updateGPU(gpu) {
             dom.gpuChartWrap.style.display = 'none';
             dom.gpuStats.style.display = 'none';
             dom.gpuUnavailable.style.display = 'flex';
-            dom.gpuName.textContent = 'No GPU detected';
-            dom.gpuPercent.textContent = '--';
+            setText(dom.gpuName, 'No GPU detected');
+            setText(dom.gpuPercent, '--');
             gpuInitialized = true;
         }
         return;
@@ -122,28 +128,29 @@ function updateGPU(gpu) {
         dom.gpuChartWrap.style.display = '';
         dom.gpuStats.style.display = '';
         dom.gpuUnavailable.style.display = 'none';
-        dom.gpuName.textContent = gpu.name;
+        setText(dom.gpuName, gpu.name);
         gpuInitialized = true;
     }
 
     updateGaugeChart(gpuChart, gpu.utilization);
-    dom.gpuPercent.textContent = gpu.utilization;
-    dom.gpuTemp.textContent = gpu.temperature + ' \u00B0C';
-    dom.gpuVram.textContent = formatNumber(gpu.memory_used) + ' / ' + formatNumber(gpu.memory_total) + ' MB';
-    dom.gpuPower.textContent = gpu.power_draw.toFixed(1) + ' W';
-    dom.gpuFan.textContent = gpu.fan_speed + '%';
-    dom.gpuClock.textContent = formatNumber(gpu.clock_current) + ' MHz';
+    setText(dom.gpuPercent, String(gpu.utilization));
+    setText(dom.gpuTemp, gpu.temperature + ' \u00B0C');
+    setText(dom.gpuVram, formatNumber(gpu.memory_used) + ' / ' + formatNumber(gpu.memory_total) + ' MB');
+    setText(dom.gpuPower, gpu.power_draw.toFixed(1) + ' W');
+    setText(dom.gpuFan, gpu.fan_speed + '%');
+    setText(dom.gpuClock, formatNumber(gpu.clock_current) + ' MHz');
 }
 
 function updateMemory(mem) {
     const pct = Math.round(mem.percent);
-    dom.memBarFill.style.width = pct + '%';
-    dom.memPercent.textContent = pct + '%';
-    dom.memUsageText.textContent = formatBytes(mem.used) + ' / ' + formatBytes(mem.total);
-    dom.memUsed.textContent = formatBytes(mem.used);
-    dom.memAvailable.textContent = formatBytes(mem.available);
-    dom.memTotal.textContent = formatBytes(mem.total);
-    dom.memCached.textContent = formatBytes(mem.cached);
+    const widthStr = pct + '%';
+    if (dom.memBarFill.style.width !== widthStr) dom.memBarFill.style.width = widthStr;
+    setText(dom.memPercent, widthStr);
+    setText(dom.memUsageText, formatBytes(mem.used) + ' / ' + formatBytes(mem.total));
+    setText(dom.memUsed, formatBytes(mem.used));
+    setText(dom.memAvailable, formatBytes(mem.available));
+    setText(dom.memTotal, formatBytes(mem.total));
+    setText(dom.memCached, formatBytes(mem.cached));
 }
 
 // --- QWebChannel: receive metrics directly from Python ---
@@ -152,7 +159,7 @@ new QWebChannel(qt.webChannelTransport, function (channel) {
 
     backend.systemInfoReady.connect(function (jsonStr) {
         const info = JSON.parse(jsonStr);
-        if (info.cpu_name) dom.cpuName.textContent = info.cpu_name;
+        if (info.cpu_name) setText(dom.cpuName, info.cpu_name);
     });
 
     backend.metricsReady.connect(function (jsonStr) {
