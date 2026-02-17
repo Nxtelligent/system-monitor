@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Monitor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+</head>
+<body>
+    <header>
+        <div class="header-left">
+            <h1>System Performance Monitor</h1>
+        </div>
+        <div class="header-right">
+            <span class="connection-status" id="connection-status">Connecting...</span>
+        </div>
+    </header>
+
+    <main class="dashboard-grid">
+        <!-- CPU Panel -->
+        <section class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <span class="panel-dot cpu-dot"></span>
+                    <h2>CPU</h2>
+                </div>
+                <span class="panel-value" id="cpu-percent">0%</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="cpu-chart"></canvas>
+            </div>
+            <div class="panel-subtitle" id="cpu-name"></div>
+            <div class="metrics-grid">
+                <div class="metric-item">
+                    <span class="metric-label">Utilization</span>
+                    <span class="metric-value" id="cpu-utilization">0%</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Speed</span>
+                    <span class="metric-value" id="cpu-speed">0 MHz</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Processes</span>
+                    <span class="metric-value" id="cpu-processes">0</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Threads</span>
+                    <span class="metric-value" id="cpu-threads">0</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Handles</span>
+                    <span class="metric-value" id="cpu-handles">0</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Up time</span>
+                    <span class="metric-value" id="cpu-uptime">0:00:00:00</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Cores</span>
+                    <span class="metric-value" id="cpu-cores">0</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Logical processors</span>
+                    <span class="metric-value" id="cpu-logical">0</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- GPU Panel -->
+        <section class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <span class="panel-dot gpu-dot"></span>
+                    <h2>GPU</h2>
+                </div>
+                <span class="panel-value" id="gpu-percent">0%</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="gpu-chart"></canvas>
+            </div>
+            <div class="panel-subtitle" id="gpu-name"></div>
+            <div class="metrics-grid" id="gpu-metrics">
+                <div class="metric-item">
+                    <span class="metric-label">Utilization</span>
+                    <span class="metric-value" id="gpu-utilization">0%</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Temperature</span>
+                    <span class="metric-value" id="gpu-temperature">0 &deg;C</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">VRAM Used</span>
+                    <span class="metric-value" id="gpu-vram-used">0 MB</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">VRAM Total</span>
+                    <span class="metric-value" id="gpu-vram-total">0 MB</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Power</span>
+                    <span class="metric-value" id="gpu-power">0 W</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Fan Speed</span>
+                    <span class="metric-value" id="gpu-fan">0%</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">GPU Clock</span>
+                    <span class="metric-value" id="gpu-clock">0 MHz</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Memory Util</span>
+                    <span class="metric-value" id="gpu-mem-util">0%</span>
+                </div>
+            </div>
+            <div class="gpu-unavailable" id="gpu-unavailable" style="display:none;">
+                <p>GPU monitoring unavailable</p>
+                <p class="gpu-unavailable-sub">No NVIDIA GPU detected or drivers not installed</p>
+            </div>
+        </section>
+
+        <!-- Memory Panel -->
+        <section class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <span class="panel-dot memory-dot"></span>
+                    <h2>Memory</h2>
+                </div>
+                <span class="panel-value" id="memory-percent">0%</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="memory-chart"></canvas>
+            </div>
+            <div class="panel-subtitle" id="memory-total-label"></div>
+            <div class="metrics-grid">
+                <div class="metric-item">
+                    <span class="metric-label">In Use</span>
+                    <span class="metric-value" id="memory-used">0 GB</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Available</span>
+                    <span class="metric-value" id="memory-available">0 GB</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Total</span>
+                    <span class="metric-value" id="memory-total">0 GB</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Cached</span>
+                    <span class="metric-value" id="memory-cached">0 GB</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>

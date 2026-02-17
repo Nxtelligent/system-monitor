@@ -1,0 +1,224 @@
+:root {
+    --bg-primary: #0d1117;
+    --bg-panel: #161b22;
+    --bg-chart: #0d1117;
+    --border-color: #30363d;
+    --text-primary: #e6edf3;
+    --text-secondary: #8b949e;
+    --text-muted: #484f58;
+    --accent-cpu: #00d4ff;
+    --accent-gpu: #76ff03;
+    --accent-memory: #ff6ec7;
+    --font: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* Header */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-panel);
+}
+
+header h1 {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    letter-spacing: 0.5px;
+}
+
+.connection-status {
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.connection-status::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+}
+
+.connection-status.connected::before {
+    background: #3fb950;
+}
+
+.connection-status.disconnected::before {
+    background: #f85149;
+}
+
+/* Dashboard Grid */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    padding: 16px 24px;
+    height: calc(100vh - 52px);
+}
+
+@media (max-width: 1200px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+    .panel {
+        min-height: 450px;
+    }
+}
+
+/* Panel */
+.panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.panel-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.panel-title h2 {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+}
+
+.panel-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.cpu-dot { background: var(--accent-cpu); }
+.gpu-dot { background: var(--accent-gpu); }
+.memory-dot { background: var(--accent-memory); }
+
+.panel-value {
+    font-size: 28px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.panel:nth-child(1) .panel-value { color: var(--accent-cpu); }
+.panel:nth-child(2) .panel-value { color: var(--accent-gpu); }
+.panel:nth-child(3) .panel-value { color: var(--accent-memory); }
+
+/* Chart Container */
+.chart-container {
+    flex: 1;
+    min-height: 160px;
+    position: relative;
+    background: var(--bg-chart);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 8px;
+    margin-bottom: 10px;
+}
+
+.panel-subtitle {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Metrics Grid */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px 16px;
+}
+
+.metric-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.metric-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    letter-spacing: 0.3px;
+}
+
+.metric-value {
+    font-size: 15px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+}
+
+/* GPU Unavailable */
+.gpu-unavailable {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: var(--text-muted);
+    padding: 24px;
+}
+
+.gpu-unavailable p {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.gpu-unavailable-sub {
+    font-size: 12px;
+    margin-top: 4px;
+    color: var(--text-muted);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
+}
