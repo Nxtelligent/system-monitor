@@ -1,20 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>System Monitor</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <link rel="stylesheet" href="../static/css/style.css">
+    <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+    <script src="../static/js/chart.umd.min.js"></script>
 </head>
+
 <body>
     <header>
         <div class="header-left">
             <h1>System Performance Monitor</h1>
         </div>
         <div class="header-right">
-            <span class="connection-status" id="connection-status">Connecting...</span>
+            <span class="connection-status connected" id="connection-status">Live</span>
         </div>
     </header>
 
@@ -139,6 +141,7 @@
         </section>
     </main>
 
-    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <script src="../static/js/dashboard.js"></script>
 </body>
+
 </html>

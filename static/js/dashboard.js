@@ -1,13 +1,36 @@
-const socket = io();
+// --- Cache all DOM references once at startup ---
+const dom = {
+    cpuPercent: document.getElementById('cpu-percent'),
+    cpuSpeed: document.getElementById('cpu-speed'),
+    cpuCores: document.getElementById('cpu-cores'),
+    cpuThreads: document.getElementById('cpu-threads'),
+    cpuProcesses: document.getElementById('cpu-processes'),
+    cpuUptime: document.getElementById('cpu-uptime'),
+    cpuName: document.getElementById('cpu-name'),
+    gpuPercent: document.getElementById('gpu-percent'),
+    gpuTemp: document.getElementById('gpu-temperature'),
+    gpuVram: document.getElementById('gpu-vram'),
+    gpuPower: document.getElementById('gpu-power'),
+    gpuFan: document.getElementById('gpu-fan'),
+    gpuClock: document.getElementById('gpu-clock'),
+    gpuName: document.getElementById('gpu-name'),
+    gpuChartWrap: document.getElementById('gpu-chart-wrapper'),
+    gpuStats: document.getElementById('gpu-stats'),
+    gpuUnavailable: document.getElementById('gpu-unavailable'),
+    memBarFill: document.getElementById('memory-bar-fill'),
+    memPercent: document.getElementById('memory-percent'),
+    memUsageText: document.getElementById('memory-usage-text'),
+    memUsed: document.getElementById('memory-used'),
+    memAvailable: document.getElementById('memory-available'),
+    memTotal: document.getElementById('memory-total'),
+    memCached: document.getElementById('memory-cached'),
+};
 
-// --- Helper shorthand ---
-function $(id) { return document.getElementById(id); }
-
+// --- Formatters ---
 function formatBytes(bytes) {
-    const gb = bytes / (1024 * 1024 * 1024);
+    const gb = bytes / 1073741824;
     if (gb >= 1) return gb.toFixed(1) + ' GB';
-    const mb = bytes / (1024 * 1024);
-    return mb.toFixed(0) + ' MB';
+    return (bytes / 1048576 | 0) + ' MB';
 }
 
 function formatNumber(n) {
@@ -15,25 +38,23 @@ function formatNumber(n) {
 }
 
 function formatUptime(seconds) {
-    const d = Math.floor(seconds / 86400);
-    const h = Math.floor((seconds % 86400) / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = Math.floor(seconds % 60);
+    const d = seconds / 86400 | 0;
+    const h = (seconds % 86400) / 3600 | 0;
+    const m = (seconds % 3600) / 60 | 0;
+    const s = seconds % 60 | 0;
     return d + ':' + String(h).padStart(2, '0') + ':' +
-           String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+        String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
 }
 
 // --- Gauge Chart Factory ---
 function createGaugeChart(canvasId, accentColor) {
     const ctx = document.getElementById(canvasId).getContext('2d');
-    const trackColor = '#1e252e';
-
     return new Chart(ctx, {
         type: 'doughnut',
         data: {
             datasets: [{
                 data: [0, 100],
-                backgroundColor: [accentColor, trackColor],
+                backgroundColor: [accentColor, '#1e252e'],
                 borderWidth: 0,
                 borderRadius: 4,
             }]
@@ -44,10 +65,7 @@ function createGaugeChart(canvasId, accentColor) {
             cutout: '75%',
             rotation: -90,
             circumference: 360,
-            animation: {
-                animateRotate: false,
-                duration: 400,
-            },
+            animation: false,
             plugins: {
                 legend: { display: false },
                 tooltip: { enabled: false },
@@ -59,103 +77,93 @@ function createGaugeChart(canvasId, accentColor) {
 
 function updateGaugeChart(chart, value) {
     const clamped = Math.max(0, Math.min(100, value));
-    chart.data.datasets[0].data = [clamped, 100 - clamped];
-    chart.update();
+    chart.data.datasets[0].data[0] = clamped;
+    chart.data.datasets[0].data[1] = 100 - clamped;
+    chart.update('none');
 }
 
 // --- Create Charts ---
 const cpuChart = createGaugeChart('cpu-chart', '#00d4ff');
 const gpuChart = createGaugeChart('gpu-chart', '#76ff03');
 
-// --- Connection Status ---
-socket.on('connect', () => {
-    const el = $('connection-status');
-    el.textContent = 'Connected';
-    el.className = 'connection-status connected';
-});
-
-socket.on('disconnect', () => {
-    const el = $('connection-status');
-    el.textContent = 'Disconnected';
-    el.className = 'connection-status disconnected';
-});
-
-// --- System Info (sent once on connect) ---
-socket.on('system_info', (info) => {
-    if (info.cpu_name) {
-        $('cpu-name').textContent = info.cpu_name;
-    }
-});
-
-// --- Metrics Update ---
+// --- Update Functions ---
 let gpuInitialized = false;
-
-socket.on('metrics_update', (data) => {
-    updateCPU(data.cpu);
-    updateGPU(data.gpu);
-    updateMemory(data.memory);
-});
 
 function updateCPU(cpu) {
     const util = Math.round(cpu.utilization);
-
     updateGaugeChart(cpuChart, util);
-    $('cpu-percent').textContent = util;
+    dom.cpuPercent.textContent = util;
 
     const speed = cpu.frequency_current;
-    if (speed >= 1000) {
-        $('cpu-speed').textContent = (speed / 1000).toFixed(2) + ' GHz';
-    } else {
-        $('cpu-speed').textContent = Math.round(speed) + ' MHz';
-    }
+    dom.cpuSpeed.textContent = speed >= 1000
+        ? (speed / 1000).toFixed(2) + ' GHz'
+        : Math.round(speed) + ' MHz';
 
-    $('cpu-cores').textContent = cpu.cores_physical;
-    $('cpu-threads').textContent = formatNumber(cpu.cores_logical);
-    $('cpu-processes').textContent = formatNumber(cpu.processes);
-    $('cpu-uptime').textContent = formatUptime(cpu.uptime_seconds);
+    dom.cpuCores.textContent = cpu.cores_physical;
+    dom.cpuThreads.textContent = formatNumber(cpu.cores_logical);
+    dom.cpuProcesses.textContent = formatNumber(cpu.processes);
+    dom.cpuUptime.textContent = formatUptime(cpu.uptime_seconds);
 }
 
 function updateGPU(gpu) {
     if (!gpu.available) {
         if (!gpuInitialized) {
-            $('gpu-chart-wrapper').style.display = 'none';
-            $('gpu-stats').style.display = 'none';
-            $('gpu-unavailable').style.display = 'flex';
-            $('gpu-name').textContent = 'No GPU detected';
-            $('gpu-percent').textContent = '--';
+            dom.gpuChartWrap.style.display = 'none';
+            dom.gpuStats.style.display = 'none';
+            dom.gpuUnavailable.style.display = 'flex';
+            dom.gpuName.textContent = 'No GPU detected';
+            dom.gpuPercent.textContent = '--';
             gpuInitialized = true;
         }
         return;
     }
 
     if (!gpuInitialized) {
-        $('gpu-chart-wrapper').style.display = '';
-        $('gpu-stats').style.display = '';
-        $('gpu-unavailable').style.display = 'none';
-        $('gpu-name').textContent = gpu.name;
+        dom.gpuChartWrap.style.display = '';
+        dom.gpuStats.style.display = '';
+        dom.gpuUnavailable.style.display = 'none';
+        dom.gpuName.textContent = gpu.name;
         gpuInitialized = true;
     }
 
-    const util = gpu.utilization;
-
-    updateGaugeChart(gpuChart, util);
-    $('gpu-percent').textContent = util;
-
-    $('gpu-temperature').innerHTML = gpu.temperature + ' &deg;C';
-    $('gpu-vram').textContent = formatNumber(gpu.memory_used) + ' / ' + formatNumber(gpu.memory_total) + ' MB';
-    $('gpu-power').textContent = gpu.power_draw.toFixed(1) + ' W';
-    $('gpu-fan').textContent = gpu.fan_speed + '%';
-    $('gpu-clock').textContent = formatNumber(gpu.clock_current) + ' MHz';
+    updateGaugeChart(gpuChart, gpu.utilization);
+    dom.gpuPercent.textContent = gpu.utilization;
+    dom.gpuTemp.textContent = gpu.temperature + ' \u00B0C';
+    dom.gpuVram.textContent = formatNumber(gpu.memory_used) + ' / ' + formatNumber(gpu.memory_total) + ' MB';
+    dom.gpuPower.textContent = gpu.power_draw.toFixed(1) + ' W';
+    dom.gpuFan.textContent = gpu.fan_speed + '%';
+    dom.gpuClock.textContent = formatNumber(gpu.clock_current) + ' MHz';
 }
 
 function updateMemory(mem) {
     const pct = Math.round(mem.percent);
-
-    $('memory-bar-fill').style.width = pct + '%';
-    $('memory-percent').textContent = pct + '%';
-    $('memory-usage-text').textContent = formatBytes(mem.used) + ' / ' + formatBytes(mem.total);
-    $('memory-used').textContent = formatBytes(mem.used);
-    $('memory-available').textContent = formatBytes(mem.available);
-    $('memory-total').textContent = formatBytes(mem.total);
-    $('memory-cached').textContent = formatBytes(mem.cached);
+    dom.memBarFill.style.width = pct + '%';
+    dom.memPercent.textContent = pct + '%';
+    dom.memUsageText.textContent = formatBytes(mem.used) + ' / ' + formatBytes(mem.total);
+    dom.memUsed.textContent = formatBytes(mem.used);
+    dom.memAvailable.textContent = formatBytes(mem.available);
+    dom.memTotal.textContent = formatBytes(mem.total);
+    dom.memCached.textContent = formatBytes(mem.cached);
 }
+
+// --- QWebChannel: receive metrics directly from Python ---
+new QWebChannel(qt.webChannelTransport, function (channel) {
+    const backend = channel.objects.backend;
+
+    backend.systemInfoReady.connect(function (jsonStr) {
+        const info = JSON.parse(jsonStr);
+        if (info.cpu_name) dom.cpuName.textContent = info.cpu_name;
+    });
+
+    backend.metricsReady.connect(function (jsonStr) {
+        const data = JSON.parse(jsonStr);
+        requestAnimationFrame(function () {
+            updateCPU(data.cpu);
+            updateGPU(data.gpu);
+            updateMemory(data.memory);
+        });
+    });
+
+    // Tell Python the page is ready
+    backend.pageReady();
+});
