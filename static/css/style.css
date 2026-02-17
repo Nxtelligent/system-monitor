@@ -1,7 +1,6 @@
 :root {
     --bg-primary: #0d1117;
     --bg-panel: #161b22;
-    --bg-chart: #0d1117;
     --border-color: #30363d;
     --text-primary: #e6edf3;
     --text-secondary: #8b949e;
@@ -68,50 +67,45 @@ header h1 {
     background: #f85149;
 }
 
-/* Dashboard Grid */
-.dashboard-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    padding: 16px 24px;
-    height: calc(100vh - 52px);
-}
-
-@media (max-width: 1200px) {
-    .dashboard-grid {
-        grid-template-columns: 1fr;
-        height: auto;
-    }
-    .panel {
-        min-height: 450px;
-    }
-}
-
-/* Panel */
-.panel {
-    background: var(--bg-panel);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 16px;
+/* Dashboard Layout */
+.dashboard {
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    gap: 16px;
+    padding: 24px;
+    max-width: 900px;
+    margin: 0 auto;
 }
 
-.panel-header {
+/* Gauge Row */
+.gauge-row {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
+    gap: 16px;
+    justify-content: center;
 }
 
-.panel-title {
+/* Gauge Panel (CPU / GPU) */
+.gauge-panel {
+    flex: 1;
+    max-width: 440px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.gauge-header {
     display: flex;
     align-items: center;
     gap: 8px;
+    margin-bottom: 16px;
+    align-self: flex-start;
 }
 
-.panel-title h2 {
+.gauge-header h2 {
     font-size: 13px;
     font-weight: 600;
     text-transform: uppercase;
@@ -119,7 +113,8 @@ header h1 {
     color: var(--text-secondary);
 }
 
-.panel-dot {
+/* Colored dots */
+.gauge-dot {
     width: 10px;
     height: 10px;
     border-radius: 50%;
@@ -129,73 +124,95 @@ header h1 {
 .gpu-dot { background: var(--accent-gpu); }
 .memory-dot { background: var(--accent-memory); }
 
-.panel-value {
-    font-size: 28px;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-}
-
-.panel:nth-child(1) .panel-value { color: var(--accent-cpu); }
-.panel:nth-child(2) .panel-value { color: var(--accent-gpu); }
-.panel:nth-child(3) .panel-value { color: var(--accent-memory); }
-
-/* Chart Container */
-.chart-container {
-    flex: 1;
-    min-height: 160px;
+/* Gauge Chart Wrapper */
+.gauge-chart-wrapper {
     position: relative;
-    background: var(--bg-chart);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    padding: 8px;
-    margin-bottom: 10px;
+    width: 200px;
+    height: 200px;
+    margin-bottom: 12px;
 }
 
-.panel-subtitle {
+.gauge-chart-wrapper canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.gauge-center-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+}
+
+.gauge-percent {
+    font-size: 44px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    color: var(--text-primary);
+}
+
+.gauge-percent-symbol {
+    font-size: 20px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin-left: 2px;
+}
+
+.gauge-label {
     font-size: 11px;
     color: var(--text-muted);
-    margin-bottom: 12px;
+    margin-bottom: 16px;
+    text-align: center;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    max-width: 100%;
 }
 
-/* Metrics Grid */
-.metrics-grid {
+/* Gauge Stats Grid */
+.gauge-stats {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px 16px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px 16px;
+    width: 100%;
 }
 
-.metric-item {
+.gauge-stat {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    align-items: center;
+    gap: 3px;
 }
 
-.metric-label {
+.stat-label {
     font-size: 11px;
     color: var(--text-secondary);
     letter-spacing: 0.3px;
 }
 
-.metric-value {
-    font-size: 15px;
+.stat-value {
+    font-size: 14px;
     font-weight: 500;
     font-variant-numeric: tabular-nums;
     color: var(--text-primary);
+    white-space: nowrap;
 }
 
 /* GPU Unavailable */
 .gpu-unavailable {
-    flex: 1;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
     color: var(--text-muted);
-    padding: 24px;
+    padding: 40px 24px;
 }
 
 .gpu-unavailable p {
@@ -207,6 +224,110 @@ header h1 {
     font-size: 12px;
     margin-top: 4px;
     color: var(--text-muted);
+}
+
+/* Memory Section */
+.memory-section {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.memory-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.memory-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.memory-title h2 {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+}
+
+.memory-usage-text {
+    font-size: 16px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent-memory);
+}
+
+/* Memory Progress Bar */
+.memory-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.memory-bar-track {
+    flex: 1;
+    height: 14px;
+    background: var(--bg-primary);
+    border-radius: 7px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+.memory-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-memory), #ff9de0);
+    border-radius: 7px 0 0 7px;
+    transition: width 0.5s ease-out;
+}
+
+.memory-bar-percent {
+    font-size: 14px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+    min-width: 40px;
+    text-align: right;
+}
+
+/* Memory Stats Row */
+.memory-stats {
+    display: flex;
+    justify-content: space-around;
+    gap: 16px;
+}
+
+.memory-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .dashboard {
+        padding: 16px;
+    }
+
+    .gauge-row {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .gauge-panel {
+        max-width: 100%;
+        width: 100%;
+    }
+
+    .memory-stats {
+        flex-wrap: wrap;
+    }
 }
 
 /* Scrollbar */
