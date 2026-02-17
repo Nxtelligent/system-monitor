@@ -1,5 +1,9 @@
 import subprocess
 import shutil
+import sys
+
+# Hide console window when calling nvidia-smi on Windows
+_CREATE_NO_WINDOW = 0x08000000 if sys.platform == 'win32' else 0
 
 _nvidia_smi_path = None
 _gpu_available = None
@@ -52,6 +56,7 @@ def get_gpu_metrics():
             capture_output=True,
             text=True,
             timeout=3,
+            creationflags=_CREATE_NO_WINDOW,
         )
         if result.returncode != 0:
             return _get_fallback_metrics()
