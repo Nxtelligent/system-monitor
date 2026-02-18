@@ -106,10 +106,15 @@ def main():
     ).replace('\\', '/')
     url = f'file:///{html_path}'
 
+    icon_path = os.path.abspath(
+        os.path.join(BASE_DIR, 'static', 'icon.ico')
+    )
+
     app = SystemMonitor(
         title='System Monitor',
         url=url,
         size='960x700',
+        icon=icon_path,
     )
 
     async def run():

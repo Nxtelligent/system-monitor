@@ -44,6 +44,7 @@ exe = EXE(
     a.scripts,
     [],
     name='SystemMonitor',
+    icon=os.path.join(root, 'static', 'icon.ico'),
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

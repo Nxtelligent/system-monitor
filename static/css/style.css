@@ -32,7 +32,6 @@ body {
     height: 32px;
     background: #1a1f26;
     user-select: none;
-    -webkit-app-region: drag;
 }
 
 .titlebar-drag {
@@ -42,6 +41,7 @@ body {
     height: 100%;
     padding-left: 12px;
     cursor: default;
+    -webkit-app-region: drag;
 }
 
 .titlebar-title {
@@ -55,6 +55,8 @@ body {
     display: flex;
     height: 100%;
     -webkit-app-region: no-drag;
+    position: relative;
+    z-index: 10;
 }
 
 .titlebar-btn {
@@ -67,6 +69,7 @@ body {
     border: none;
     color: var(--text-secondary);
     cursor: pointer;
+    pointer-events: auto;
     transition: background 0.1s;
 }
 

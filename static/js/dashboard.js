@@ -204,21 +204,21 @@ function onMetrics(data) {
     });
 
     // Double-click to maximize/restore
-    dragArea.addEventListener('dblclick', function () {
+    dragArea.addEventListener('dblclick', async function () {
         if (window.webview2 && window.webview2.api) {
-            window.webview2.api.toggle_maximize();
+            await window.webview2.api.toggle_maximize();
         }
     });
 
     // Window control buttons
-    btnMin.addEventListener('click', function () {
-        if (window.webview2 && window.webview2.api) window.webview2.api.minimize();
+    btnMin.addEventListener('click', async function () {
+        if (window.webview2 && window.webview2.api) await window.webview2.api.minimize();
     });
-    btnMax.addEventListener('click', function () {
-        if (window.webview2 && window.webview2.api) window.webview2.api.toggle_maximize();
+    btnMax.addEventListener('click', async function () {
+        if (window.webview2 && window.webview2.api) await window.webview2.api.toggle_maximize();
     });
-    btnClose.addEventListener('click', function () {
-        if (window.webview2 && window.webview2.api) window.webview2.api.close();
+    btnClose.addEventListener('click', async function () {
+        if (window.webview2 && window.webview2.api) await window.webview2.api.close();
     });
 })();
 
