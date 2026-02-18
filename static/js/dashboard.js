@@ -167,6 +167,61 @@ function onMetrics(data) {
     });
 }
 
+// --- Title bar window controls ---
+(function initTitlebar() {
+    var dragArea = document.getElementById('titlebar-drag');
+    var btnMin = document.getElementById('btn-minimize');
+    var btnMax = document.getElementById('btn-maximize');
+    var btnClose = document.getElementById('btn-close');
+    var isDragging = false;
+    var dragStartX = 0;
+    var dragStartY = 0;
+
+    // Window drag via mouse events
+    dragArea.addEventListener('mousedown', function (e) {
+        if (e.button !== 0) return;
+        isDragging = true;
+        dragStartX = e.screenX;
+        dragStartY = e.screenY;
+        e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', function (e) {
+        if (!isDragging) return;
+        var dx = e.screenX - dragStartX;
+        var dy = e.screenY - dragStartY;
+        if (dx !== 0 || dy !== 0) {
+            dragStartX = e.screenX;
+            dragStartY = e.screenY;
+            if (window.webview2 && window.webview2.api && window.webview2.api.drag_window) {
+                window.webview2.api.drag_window(dx, dy);
+            }
+        }
+    });
+
+    document.addEventListener('mouseup', function () {
+        isDragging = false;
+    });
+
+    // Double-click to maximize/restore
+    dragArea.addEventListener('dblclick', function () {
+        if (window.webview2 && window.webview2.api) {
+            window.webview2.api.toggle_maximize();
+        }
+    });
+
+    // Window control buttons
+    btnMin.addEventListener('click', function () {
+        if (window.webview2 && window.webview2.api) window.webview2.api.minimize();
+    });
+    btnMax.addEventListener('click', function () {
+        if (window.webview2 && window.webview2.api) window.webview2.api.toggle_maximize();
+    });
+    btnClose.addEventListener('click', function () {
+        if (window.webview2 && window.webview2.api) window.webview2.api.close();
+    });
+})();
+
 // Tell Python the page is ready once webview2 API is available
 (function waitForApi() {
     if (window.webview2 && window.webview2.api && window.webview2.api.page_ready) {

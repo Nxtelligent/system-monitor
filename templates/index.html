@@ -10,6 +10,24 @@
 </head>
 
 <body>
+    <!-- Custom title bar (webview2 renders over native title bar) -->
+    <div class="titlebar" id="titlebar">
+        <div class="titlebar-drag" id="titlebar-drag">
+            <span class="titlebar-title">System Monitor</span>
+        </div>
+        <div class="titlebar-controls">
+            <button class="titlebar-btn" id="btn-minimize" aria-label="Minimize">
+                <svg width="10" height="1" viewBox="0 0 10 1"><rect width="10" height="1" fill="currentColor"/></svg>
+            </button>
+            <button class="titlebar-btn" id="btn-maximize" aria-label="Maximize">
+                <svg width="10" height="10" viewBox="0 0 10 10"><rect x="0.5" y="0.5" width="9" height="9" fill="none" stroke="currentColor" stroke-width="1"/></svg>
+            </button>
+            <button class="titlebar-btn titlebar-btn-close" id="btn-close" aria-label="Close">
+                <svg width="10" height="10" viewBox="0 0 10 10"><line x1="0" y1="0" x2="10" y2="10" stroke="currentColor" stroke-width="1.2"/><line x1="10" y1="0" x2="0" y2="10" stroke="currentColor" stroke-width="1.2"/></svg>
+            </button>
+        </div>
+    </div>
+
     <header>
         <div class="header-left">
             <h1>System Performance Monitor</h1>
